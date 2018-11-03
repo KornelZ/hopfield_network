@@ -15,6 +15,12 @@ def read_csv(path):
         print(e)
         exit(1)
 
+def add_noise(image, to_switch=4):
+    noisy = image.copy()
+    switch = np.random.choice(range(len(image)), to_switch)
+    noisy[switch] = -image[switch]
+    return noisy
+
 #To print more elements in arrays
 np.set_printoptions(edgeitems=100)
 data = read_csv(PATH).as_matrix()
@@ -22,9 +28,11 @@ print(data.shape)
 
 network = net.HopfieldNet(SIZE, ITERS, THRESHOLD)
 train = data
-test = data[0, :]
+test = add_noise(data[0, :])
+expected = data[0, :]
 network.train(train)
-result = network.test_sync(test)
-print("Input", test)
+result = network.test_async(test)
+print("Input {},\n expected {}".format(test, expected))
 print("Result", result)
-print("Stable", (test == result).all())
+print("Stable", (expected == result).all())
+print("Different {} out of {}".format(sum(expected == result), len(expected)))

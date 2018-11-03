@@ -24,7 +24,7 @@ class HopfieldNet(object):
         return np.vectorize(self.sign)(value)
 
     def energy(self, input):
-        return (-0.5 * np.sum(self.W * input.T * input) +
+        return (-0.5 * np.dot(np.dot(input.T, self.W), input) +
                 np.sum(input * self.threshold))
 
     def test_async(self, input):
@@ -34,6 +34,7 @@ class HopfieldNet(object):
             order = list(range(self.size))
             np.random.shuffle(order)
             updated = False
+            print("Iter {}, energy {}".format(iter, self.energy(output)))
             for i in order:
                 activation = 0.0
                 for j in range(self.size):
@@ -42,8 +43,6 @@ class HopfieldNet(object):
                 if activation != output[i]:
                     output[i] = activation
                     updated = True
-                    print("Updated")
-            print("Iter {}, energy {}".format(iter, self.energy(output)))
             if not updated:
                 break
         return output
@@ -52,13 +51,13 @@ class HopfieldNet(object):
         output = input
         for iter in range(self.iters):
             updated = False
-            t = self.W * input
-            activation = np.sum(self.W * input, axis=1)
+            activation = np.dot(self.W, input)
             activation = self.sign_vec(activation - self.threshold)
             print("Iter {}, energy {}".format(iter, self.energy(output)))
             if (activation != output).any():
                 output = activation
                 updated = True
+                print("Updated")
             if not updated:
                 break
         return output
