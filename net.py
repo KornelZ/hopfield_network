@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class HopfieldNet(object):
@@ -35,6 +36,7 @@ class HopfieldNet(object):
             np.random.shuffle(order)
             updated = False
             print("Iter {}, energy {}".format(iter, self.energy(output)))
+            self.plot(output, iter)
             for i in order:
                 activation = 0.0
                 for j in range(self.size):
@@ -44,6 +46,7 @@ class HopfieldNet(object):
                     output[i] = activation
                     updated = True
             if not updated:
+                self.plot(output, iter)
                 break
         return output
 
@@ -54,11 +57,21 @@ class HopfieldNet(object):
             activation = np.dot(self.W, input)
             activation = self.sign_vec(activation - self.threshold)
             print("Iter {}, energy {}".format(iter, self.energy(output)))
+            self.plot(output, iter)
             if (activation != output).any():
                 output = activation
                 updated = True
                 print("Updated")
             if not updated:
+                self.plot(output, iter)
                 break
         return output
+
+    def plot(self, output, title):
+        if isinstance(title, int):
+            plt.title("Iter {}".format(title))
+        else:
+            plt.title(title)
+        plt.imshow(np.resize(output, (int(np.sqrt(self.size)), int(np.sqrt(self.size)))))
+        plt.show()
 
