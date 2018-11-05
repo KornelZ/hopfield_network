@@ -2,10 +2,18 @@ import pandas as pd
 import numpy as np
 import net
 
-PATH = "data/large-25x25.csv"
-SIZE = 625
+PATH = "data/animals-14x9.csv"
+IMG_SIZE = (9, 14)
+SIZE = IMG_SIZE[0] * IMG_SIZE[1]
 THRESHOLD = 0.5
 ITERS = 10
+ACCEPTABLE_PERCENT = 0.85
+TEST_SYNC = False
+
+USE_RANDOM_IMAGE = False
+NOISE = 25
+SAVE_PLOTS = False
+
 
 def read_csv(path):
     try:
@@ -15,7 +23,7 @@ def read_csv(path):
         print(e)
         exit(1)
 
-def add_noise(image, to_switch=10):
+def add_noise(image, to_switch=NOISE):
     noisy = image.copy()
     switch = np.random.choice(range(len(image)), to_switch, replace=False)
     noisy[switch] = -image[switch]
@@ -27,20 +35,35 @@ def get_random_image(size):
     img[img >= 0.5] = 1
     return img
 
+def test_dataset(data):
+    network = net.HopfieldNet(SIZE, ITERS, THRESHOLD, SAVE_PLOTS, IMG_SIZE)
+    train = data
+    network.train(train)
+    for i in range(data.shape[0]):
+        test = add_noise(data[i, :])
+        expected = data[i, :]
+        result = network.test(test, TEST_SYNC)
+        stability = expected == result
+        total = len(stability)
+        print("Stable", sum(stability) > ACCEPTABLE_PERCENT * total)
+        print("Same {} out of {}".format(sum(stability), len(expected)))
+        network.plot(expected, "Original")
+
+def test_random(data):
+    network = net.HopfieldNet(SIZE, ITERS, THRESHOLD, SAVE_PLOTS, IMG_SIZE)
+    train = data
+    network.train(train)
+    test = get_random_image(SIZE)
+    result = network.test(test, TEST_SYNC)
+    print("Random result:", result)
+
 
 #To print more elements in arrays
-#np.set_printoptions(edgeitems=100)
+np.set_printoptions(edgeitems=10)
 data = read_csv(PATH).as_matrix()
-print(data.shape)
 
-network = net.HopfieldNet(SIZE, ITERS, THRESHOLD)
-train = data
-test = get_random_image(SIZE)#add_noise(data[5, :])
-expected = data[5, :]
-network.train(train)
-result = network.test_async(test)
-print("Input {},\n expected {}".format(test, expected))
-print("Result", result)
-print("Stable", (expected == result).all())
-print("Same {} out of {}".format(sum(expected == result), len(expected)))
-network.plot(expected, "Original")
+if USE_RANDOM_IMAGE:
+    test_random(data)
+else:
+    test_dataset(data)
+

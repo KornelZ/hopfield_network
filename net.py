@@ -1,14 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+
+
+def save_plot(plot):
+    timestr = time.strftime("%Y-%m-%d_%H-%M-%S")
+    plt.imsave(timestr + ".png", plot)
 
 
 class HopfieldNet(object):
 
-    def __init__(self, size, iters, threshold):
+    def __init__(self, size, iters, threshold, save_plots, img_size):
         self.size = size
         self.W = np.zeros((size, size), dtype=np.float32)
         self.iters = iters
         self.threshold = np.full(size, fill_value=threshold, dtype=np.float32)
+        self.save_plots = save_plots
+        self.img_size = img_size
 
     def train(self, data):
         for i in range(data.shape[0]):
@@ -30,7 +38,6 @@ class HopfieldNet(object):
 
     def test_async(self, input):
         output = input
-
         for iter in range(self.iters):
             order = list(range(self.size))
             np.random.shuffle(order)
@@ -40,8 +47,9 @@ class HopfieldNet(object):
             for i in order:
                 activation = 0.0
                 for j in range(self.size):
-                    activation += self.W[i, j] * input[j]
-                activation = self.sign(activation - self.threshold[0])
+                    if i != j:
+                        activation += self.W[i, j] * input[j]
+                activation = np.sign(activation - self.threshold[0])
                 if activation != output[i]:
                     output[i] = activation
                     updated = True
@@ -55,7 +63,7 @@ class HopfieldNet(object):
         for iter in range(self.iters):
             updated = False
             activation = np.dot(self.W, input)
-            activation = self.sign_vec(activation - self.threshold)
+            activation = np.sign(activation - self.threshold)
             print("Iter {}, energy {}".format(iter, self.energy(output)))
             self.plot(output, iter)
             if (activation != output).any():
@@ -67,11 +75,21 @@ class HopfieldNet(object):
                 break
         return output
 
+    def test(self, input, sync):
+        if sync:
+            return self.test_sync(input)
+        else:
+            return self.test_async(input)
+
     def plot(self, output, title):
         if isinstance(title, int):
             plt.title("Iter {}".format(title))
         else:
             plt.title(title)
-        plt.imshow(np.resize(output, (int(np.sqrt(self.size)), int(np.sqrt(self.size)))))
+        img = np.resize(output, self.img_size)
+
+        plt.imshow(img)
         plt.show()
+        if self.save_plots:
+            save_plot(img)
 
