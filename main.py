@@ -2,16 +2,16 @@ import pandas as pd
 import numpy as np
 import net
 
-PATH = "data/animals-14x9.csv"
-IMG_SIZE = (9, 14)
+PATH = "data/large-25x25.csv"
+IMG_SIZE = (25, 25)
 SIZE = IMG_SIZE[0] * IMG_SIZE[1]
 THRESHOLD = 0.5
 ITERS = 10
-ACCEPTABLE_PERCENT = 0.85
-TEST_SYNC = False
+ACCEPTABLE_PERCENT = 1.0
+TEST_SYNC = True
 
 USE_RANDOM_IMAGE = False
-NOISE = 25
+NOISE = 30
 SAVE_PLOTS = False
 
 
@@ -39,15 +39,22 @@ def test_dataset(data):
     network = net.HopfieldNet(SIZE, ITERS, THRESHOLD, SAVE_PLOTS, IMG_SIZE)
     train = data
     network.train(train)
+    total_stable = 0
     for i in range(data.shape[0]):
+        print("PATTERN #", i + 1)
         test = add_noise(data[i, :])
         expected = data[i, :]
         result = network.test(test, TEST_SYNC)
         stability = expected == result
         total = len(stability)
-        print("Stable", sum(stability) > ACCEPTABLE_PERCENT * total)
+        is_stable = sum(stability) >= ACCEPTABLE_PERCENT * total
+        print("Stable", is_stable)
         print("Same {} out of {}".format(sum(stability), len(expected)))
         network.plot(expected, "Original")
+        if is_stable:
+            total_stable += 1
+    print("Total stable ", total_stable)
+
 
 def test_random(data):
     network = net.HopfieldNet(SIZE, ITERS, THRESHOLD, SAVE_PLOTS, IMG_SIZE)

@@ -45,17 +45,14 @@ class HopfieldNet(object):
             print("Iter {}, energy {}".format(iter, self.energy(output)))
             self.plot(output, iter)
             for i in order:
-                activation = 0.0
-                for j in range(self.size):
-                    if i != j:
-                        activation += self.W[i, j] * input[j]
+                activation = np.dot(self.W[i, :],  input)
                 activation = np.sign(activation - self.threshold[0])
                 if activation != output[i]:
                     output[i] = activation
                     updated = True
             if not updated:
-                self.plot(output, iter)
                 break
+
         return output
 
     def test_sync(self, input):
@@ -71,8 +68,8 @@ class HopfieldNet(object):
                 updated = True
                 print("Updated")
             if not updated:
-                self.plot(output, iter)
                 break
+
         return output
 
     def test(self, input, sync):
