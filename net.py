@@ -1,11 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import os
 
-
-def save_plot(plot):
+def save_plot():
     timestr = time.strftime("%Y-%m-%d_%H-%M-%S")
-    plt.imsave(timestr + ".png", plot)
+    index = ""
+    while os.path.isfile(timestr + str(index) + ".png"):
+        if index == "":
+            index = 1
+        else:
+            index += 1
+    plt.savefig(timestr + str(index) + ".png")
 
 
 class HopfieldNet(object):
@@ -25,9 +31,9 @@ class HopfieldNet(object):
         np.fill_diagonal(self.W, 0)
 
     def sign(self, value):
-        if value < 0:
-            return -1
-        return 1
+        value = np.sign(value)
+        value[value == 0] = 1
+        return value
 
     def sign_vec(self, value):
         return np.vectorize(self.sign)(value)
@@ -60,7 +66,7 @@ class HopfieldNet(object):
         for iter in range(self.iters):
             updated = False
             activation = np.dot(self.W, input)
-            activation = np.sign(activation - self.threshold)
+            activation = self.sign(activation - self.threshold)
             print("Iter {}, energy {}".format(iter, self.energy(output)))
             self.plot(output, iter)
             if (activation != output).any():
@@ -86,7 +92,7 @@ class HopfieldNet(object):
         img = np.resize(output, self.img_size)
 
         plt.imshow(img)
-        plt.show()
         if self.save_plots:
-            save_plot(img)
+            save_plot()
+        plt.show()
 
